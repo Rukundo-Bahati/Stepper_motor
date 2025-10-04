@@ -1,30 +1,35 @@
 #include <Stepper.h>
 
-// Define steps per revolution of your stepper motor (adjust this!)
-const int stepsPerRevolution = 200;  
+// 28BYJ-48 has 2048 steps per revolution (64 steps × 32:1 gear ratio)
+const int stepsPerRevolution = 2048;  // Corrected for 28BYJ-48
 
-// Create stepper object (pins depend on your driver wiring)
-Stepper myStepper(stepsPerRevolution, 8, 9, 10, 11);
+// Create stepper object - typical pin configuration for ULN2003 driver
+Stepper myStepper(stepsPerRevolution, 8, 10, 9, 11); // IN1, IN3, IN2, IN4
 
-String inputString = "";   // Store incoming serial command
+String inputString = "";
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("Stepper Motor Control Ready!");
-  Serial.println("Type commands like: rotate 180 degrees or rotate -270 degrees");
+  myStepper.setSpeed(10); // RPM - important for 28BYJ-48 (5-15 RPM recommended)
+  Serial.println("28BYJ-48 Stepper Motor Control Ready!");
+  Serial.println("Type commands like: rotate 180 degrees or rotate -90 degrees");
 }
 
 void loop() {
-  // Check if serial data is available
   if (Serial.available()) {
-    inputString = Serial.readStringUntil('\n'); // Read the whole line
-    inputString.trim(); // Remove extra spaces
+    inputString = Serial.readStringUntil('\n');
+    inputString.trim();
 
     if (inputString.startsWith("rotate")) {
-      // Extract number part (angle)
+      // Extract angle value
       int firstSpace = inputString.indexOf(' ');
       int secondSpace = inputString.indexOf(' ', firstSpace + 1);
-
+      
+      // Handle case where there's no "degrees" word
+      if (secondSpace == -1) {
+        secondSpace = inputString.length();
+      }
+      
       String angleStr = inputString.substring(firstSpace + 1, secondSpace);
       int angle = angleStr.toInt();
 
@@ -41,7 +46,7 @@ void loop() {
       Serial.println("Done.");
     }
     else {
-      Serial.println("Invalid command. Use format: rotate <angle> degrees");
+      Serial.println("Invalid command. Use: rotate <angle>");
     }
   }
 }
